@@ -49,6 +49,8 @@ find_and_list_files_and_directories() {
             echo "$file" ";;;"
         done < <(echo "$files" )
         
+        echo "Removing empty folders..."
+
         while read -r directory; do
             echo "$directory" ";;;"
         done < <(echo "$directories")
