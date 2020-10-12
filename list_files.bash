@@ -29,16 +29,16 @@ find_and_list_files_and_directories() {
     parent_folder=$1
     time_frame=$2
 
-    echo "$TIMESTAMP" 'Cleaning up ${parent_folder}...'
+    echo "$TIMESTAMP" "Cleaning up ${parent_folder}..."
 
     files=$(while IFS= read -r -d '' file; do
                 printf '%s\n' "$file"
-            done < <(find "$parent_folder" -type f -name '*.*' -mtime +${time_frame} -print0))
+            done < <(find "${parent_folder}" -type f -mtime +${time_frame} -name '*.*' -print0))
     files_count=$(wc -l < <(echo "$files")) #returns the number of lines, equal to the number of files
 
     directories=$(while IFS= read -r -d '' directory; do
                     printf '%s\n' "$directory"
-                done < <(find "$parent_folder" -type d -name '*.*' -mtime +${time_frame} -print0))
+                done < <(find "${parent_folder}" -type d -mtime +${time_frame} -name '*.*' -print0))
 
     # if there are any files to be deleted, clean them up and remove now empty directories
     if [ $files_count -eq 0 ]; then
@@ -56,10 +56,10 @@ find_and_list_files_and_directories() {
 }
 
 # medium to be liste
-find_and_list_files_and_directories medium_parent_folder medium_time
+find_and_list_files_and_directories $medium_parent_folder $medium_time
 
 # hot to be listed
-find_and_list_files_and_directories hot_parent_folder hot_time
+find_and_list_files_and_directories $hot_parent_folder $hot_time
 
 
 # add files:scan 
