@@ -45,8 +45,9 @@ find_and_delete_files_and_directories() {
         echo "$TIMESTAMP" $files_count old files found, skipping...
     else
         echo "$TIMESTAMP" $files_count old files found, deleting...
+        
         while read -r file; do
-            $(aws s3 mv "$file" s3://fileshare-owncloud-hot/)
+            $(/usr/local/bin/aws s3 mv "$file" s3://fileshare-owncloud-hot/)
         done < <(echo "$files" )
         
         for read -r directory; do
@@ -63,4 +64,5 @@ find_and_delete_files_and_directories hot_parent_folder hot_time
 
 
 # add files:scan 
-#$(php )
+# use verbose for developement TODO - remove verbose once done
+$(/usr/bin/php /var/www/owncloud/occ file:scan --all -vv)
