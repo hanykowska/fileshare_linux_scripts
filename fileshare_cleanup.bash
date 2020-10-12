@@ -50,7 +50,7 @@ find_and_delete_files_and_directories() {
             $(/usr/local/bin/aws s3 mv "$file" s3://fileshare-owncloud-hot/)
         done < <(echo "$files" )
         
-        for read -r directory; do
+        while read -r directory; do
             $(rmdir "$directory" --ignore-fail-on-non-empty)
         done < <(echo "$directories")
     fi

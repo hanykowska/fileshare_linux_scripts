@@ -49,7 +49,7 @@ find_and_list_files_and_directories() {
             echo "$file" ";;;"
         done < <(echo "$files" )
         
-        for read -r directory; do
+        while read -r directory; do
             echo "$directory" ";;;"
         done < <(echo "$directories")
     fi
