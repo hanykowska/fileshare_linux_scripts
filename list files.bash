@@ -1,5 +1,5 @@
 #!/bin/bash
-# Maintenance script for cleaning up old files on fileshare
+# Test script to check the looping through files works correctly
 # Files in Medium Storage   of 1 year or older
 # Files in Hot Storage      of 60 days or older
 # Originally created by Hanna Nykowska @ The Information Lab
@@ -25,7 +25,7 @@ hot_time=60
 
 
 ### FIND THE FILES AND DIRECTORIES TO BE DELETED
-find_and_delete_files_and_directories() {
+find_and_list_files_and_directories() {
     parent_folder=$1
     time_frame=$2
 
@@ -46,20 +46,20 @@ find_and_delete_files_and_directories() {
     else
         echo "$TIMESTAMP" $files_count old files found, deleting...
         while read -r file; do
-            $(aws s3 mv "$file" s3://fileshare-owncloud-hot/)
+            echo "$file" ";;;"
         done < <(echo "$files" )
         
         for read -r directory; do
-            $(rmdir "$directory" --ignore-fail-on-non-empty)
+            echo "$directory" ";;;"
         done < <(echo "$directories")
     fi
 }
 
-# medium to be deleted
-find_and_delete_files_and_directories medium_parent_folder medium_time
+# medium to be liste
+find_and_list_files_and_directories medium_parent_folder medium_time
 
-# hot to be delete
-find_and_delete_files_and_directories hot_parent_folder hot_time
+# hot to be listed
+find_and_list_files_and_directories hot_parent_folder hot_time
 
 
 # add files:scan 
