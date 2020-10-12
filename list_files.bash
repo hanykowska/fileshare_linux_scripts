@@ -56,10 +56,10 @@ find_and_list_files_and_directories() {
 }
 
 # medium to be liste
-find_and_list_files_and_directories $medium_parent_folder $medium_time
+find_and_list_files_and_directories "$medium_parent_folder" $medium_time
 
 # hot to be listed
-find_and_list_files_and_directories $hot_parent_folder $hot_time
+find_and_list_files_and_directories "$hot_parent_folder" $hot_time
 
 
 # add files:scan 
