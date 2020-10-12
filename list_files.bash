@@ -17,7 +17,7 @@ TIMESTAMP=`date '+%Y-%m-%d %H:%M:%S'`
 
 # parent folders
 medium_parent_folder="/mnt/owncloud/data/til1/files/__Medium Storage (Data expires after 1 year)/"
-hot_parent_folder="/mnt/owncloud/data/til1/files/__Hot Storage (Data expires after 60 days)/"
+hot_parent_folder="/mnt/owncloud/data/til1/files/__Hot Storage (Data expires after 60 Days)/"
 
 # time tresholds in days
 medium_time=365
