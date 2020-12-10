@@ -69,4 +69,4 @@ find_and_delete_files_and_directories "$hot_parent_folder" "$hot_time"
 
 # add files:scan 
 # use verbose for developement TODO - remove verbose once done
-$(/usr/bin/php /var/www/owncloud/occ file:scan --all -vv)
+$(sudo -u www-data /usr/bin/php /var/www/owncloud/occ file:scan --all -vv)
