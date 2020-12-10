@@ -36,9 +36,7 @@ find_and_delete_files_and_directories() {
             done < <(find "$parent_folder" -type f -name '*.*' -mtime +${time_frame} -print0))
     files_count=$(wc -l < <(echo "$files")) #returns the number of lines, equal to the number of files
 
-    directories=$(while IFS= read -r -d '' directory; do
-                    printf '%s\n' "$directory"
-                done < <(find "$parent_folder" -type d -name '*.*' -mtime +${time_frame} -print0))
+    
 
     # if there are any files to be deleted, clean them up and remove now empty directories
     if [ $files_count -eq 0 ]; then
@@ -47,8 +45,14 @@ find_and_delete_files_and_directories() {
         echo "$TIMESTAMP" $files_count old files found, deleting...
         
         while read -r file; do
-            $(/usr/local/bin/aws s3 mv "$file" s3://fileshare-owncloud-hot/)
+            $(/usr/local/bin/aws s3 cp "$file" s3://fileshare-owncloud-hot/)
+            $(rm -f "$file")
         done < <(echo "$files" )
+
+        # TODO: find directories older than X and empty after removing old files
+        directories=$(while IFS= read -r -d '' directory; do
+                    printf '%s\n' "$directory"
+                done < <(find "$parent_folder" -type d -empty -name '*.*' -mtime +${time_frame} -print0))
         
         while read -r directory; do
             $(rmdir "$directory" --ignore-fail-on-non-empty)
@@ -57,7 +61,7 @@ find_and_delete_files_and_directories() {
 }
 
 # medium to be deleted
-find_and_delete_files_and_directories medium_parent_folder medium_time
+#find_and_delete_files_and_directories medium_parent_folder medium_time
 
 # hot to be delete
 find_and_delete_files_and_directories hot_parent_folder hot_time
