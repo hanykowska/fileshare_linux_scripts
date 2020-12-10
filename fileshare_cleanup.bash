@@ -29,20 +29,20 @@ find_and_delete_files_and_directories() {
     parent_folder=$1
     time_frame=$2
 
-    echo "$TIMESTAMP" 'Cleaning up ${parent_folder}...'
+    echo "$TIMESTAMP" 'Cleaning up "${parent_folder}"...'
 
     files=$(while IFS= read -r -d '' file; do
                 printf '%s\n' "$file"
-            done < <(find "$parent_folder" -type f -name '*.*' -mtime +${time_frame} -print0))
+            done < <(find "$parent_folder" -type f -name '*.*' -mtime +"${time_frame}" -print0))
     files_count=$(wc -l < <(echo "$files")) #returns the number of lines, equal to the number of files
 
     
 
     # if there are any files to be deleted, clean them up and remove now empty directories
-    if [ $files_count -eq 0 ]; then
-        echo "$TIMESTAMP" $files_count old files found, skipping...
+    if [ "$files_count" -eq 0 ]; then
+        echo "$TIMESTAMP" "$files_count" old files found, skipping...
     else
-        echo "$TIMESTAMP" $files_count old files found, deleting...
+        echo "$TIMESTAMP" "$files_count" old files found, deleting...
         
         while read -r file; do
             $(/usr/local/bin/aws s3 cp "$file" s3://fileshare-owncloud-hot/)
@@ -52,7 +52,7 @@ find_and_delete_files_and_directories() {
         # TODO: find directories older than X and empty after removing old files
         directories=$(while IFS= read -r -d '' directory; do
                     printf '%s\n' "$directory"
-                done < <(find "$parent_folder" -type d -empty -name '*.*' -mtime +${time_frame} -print0))
+                done < <(find "$parent_folder" -type d -empty -name '*.*' -mtime +"${time_frame}" -print0))
         
         while read -r directory; do
             $(rmdir "$directory" --ignore-fail-on-non-empty)
@@ -64,7 +64,7 @@ find_and_delete_files_and_directories() {
 #find_and_delete_files_and_directories $medium_parent_folder $medium_time
 
 # hot to be delete
-find_and_delete_files_and_directories $hot_parent_folder $hot_time
+find_and_delete_files_and_directories "$hot_parent_folder" "$hot_time"
 
 
 # add files:scan 
