@@ -46,10 +46,11 @@ find_and_delete_files_and_directories() {
         
         while read -r file; do
             $(/usr/local/bin/aws s3 cp "$file" s3://fileshare-owncloud-hot/)
+            # TODO: check if the file has been copied over, or if the command was successful, only then remove the file
             $(rm -f "$file")
         done < <(echo "$files" )
 
-        # TODO: find directories older than X and empty after removing old files
+        # find directories older than X and empty after removing old files
         directories=$(while IFS= read -r -d '' directory; do
                     printf '%s\n' "$directory"
                 done < <(find "$parent_folder" -type d -empty -name '*.*' -mtime +"${time_frame}" -print0))
