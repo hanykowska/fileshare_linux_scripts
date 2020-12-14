@@ -18,10 +18,12 @@ TIMESTAMP=`date '+%Y-%m-%d %H:%M:%S'`
 # parent folders
 medium_parent_folder="/mnt/owncloud/data/til1/files/__Medium Storage (Data expires after 1 year)/"
 hot_parent_folder="/mnt/owncloud/data/til1/files/__Hot Storage (Data expires after 60 Days)/"
+hania_test="/mnt/owncloud/data/til1/files/__Hot Storage (Data expires after 60 Days)/Hania-test/"
 
 # time tresholds in days
 medium_time=365
 hot_time=60
+hania_time=1
 
 
 ### FIND THE FILES AND DIRECTORIES TO BE DELETED
@@ -45,7 +47,7 @@ find_and_delete_files_and_directories() {
         echo "$TIMESTAMP" "$files_count" old files found, deleting...
         
         while read -r file; do
-            $(/usr/local/bin/aws s3 cp "$file" s3://fileshare-owncloud-hot/)
+            $(/usr/local/bin/aws s3 cp "${file}" s3://fileshare-owncloud-hot/)
             # TODO: check if the file has been copied over, or if the command was successful, only then remove the file
             $(rm -f "$file")
         done < <(echo "$files" )
@@ -65,8 +67,10 @@ find_and_delete_files_and_directories() {
 #find_and_delete_files_and_directories $medium_parent_folder $medium_time
 
 # hot to be delete
-find_and_delete_files_and_directories "$hot_parent_folder" "$hot_time"
+# find_and_delete_files_and_directories "$hot_parent_folder" "$hot_time"
 
+# test
+find_and_delete_files_and_directories "$hania_test" "$hania_time"
 
 # add files:scan 
 # use verbose for developement TODO - remove verbose once done
