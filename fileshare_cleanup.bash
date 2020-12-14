@@ -56,7 +56,7 @@ find_and_delete_files_and_directories() {
         # find directories older than X and empty after removing old files
         directories=$(while IFS= read -r -d '' directory; do
                     printf '%s\n' "${directory}"
-                done < <(find "${parent_folder}" -type d -empty -name '*.*' -mmin +"${time_frame}" -print0))
+                done < <(find "${parent_folder}" -type d -empty -mmin +"${time_frame}" -print0))
         
         while read -r directory; do
             echo "${directory}"
