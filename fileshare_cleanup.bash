@@ -58,7 +58,7 @@ find_and_delete_files_and_directories() {
                 done < <(find "${parent_folder}" -type d -empty -name '*.*' -mtime +"${time_frame}" -print0))
         
         while read -r directory; do
-            $(rmdir "${directory}" --ignore-fail-on-non-empty)
+            $(rm -d "${directory}")
         done < <(echo "${directories}")
     fi
 }
