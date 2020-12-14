@@ -54,12 +54,12 @@ find_and_delete_files_and_directories() {
 
         # find directories older than X and empty after removing old files
         directories=$(while IFS= read -r -d '' directory; do
-                    printf '%s\n' "$directory"
-                done < <(find "$parent_folder" -type d -empty -name '*.*' -mtime +"${time_frame}" -print0))
+                    printf '%s\n' "${directory}"
+                done < <(find "${parent_folder}" -type d -empty -name '*.*' -mtime +"${time_frame}" -print0))
         
         while read -r directory; do
-            $(rmdir "$directory" --ignore-fail-on-non-empty)
-        done < <(echo "$directories")
+            $(rmdir "${directory}" --ignore-fail-on-non-empty)
+        done < <(echo "${directories}")
     fi
 }
 
@@ -74,4 +74,4 @@ find_and_delete_files_and_directories "$hania_test" "$hania_time"
 
 # add files:scan 
 # use verbose for developement TODO - remove verbose once done
-$(sudo -u www-data /usr/bin/php /var/www/owncloud/occ file:scan --all -vv)
+$(sudo -u www-data /usr/bin/php /var/www/owncloud/occ file:scan --path="/til1/files/__Hot Storage (Data expires after 60 Days)" -vv)
