@@ -23,7 +23,7 @@ hania_test="/mnt/owncloud/data/til1/files/__Hot Storage (Data expires after 60 D
 # time tresholds in days
 medium_time=365
 hot_time=60
-hania_time=60 # but minutes
+hania_time=1
 
 
 ### FIND THE FILES AND DIRECTORIES TO BE DELETED
@@ -35,7 +35,7 @@ find_and_delete_files_and_directories() {
 
     files=$(while IFS= read -r -d '' file; do
                 printf '%s\n' "${file}"
-            done < <(find "${parent_folder}" -type f -name '*.*' -mmin +"${time_frame}" -print0))
+            done < <(find "${parent_folder}" -type f -name '*.*' -mtime +"${time_frame}" -print0))
     files_count=$(wc -l < <(echo "${files}")) #returns the number of lines, equal to the number of files
 
     
@@ -48,19 +48,28 @@ find_and_delete_files_and_directories() {
         
         while read -r file; do
             echo "${file}"
-            # $(/usr/local/bin/aws s3 cp "${file}" s3://fileshare-owncloud-hot/)
-            # TODO: check if the file has been copied over, or if the command was successful, only then remove the file
+            /usr/local/bin/aws s3 cp "${file}" s3://fileshare-owncloud-hot/
+            # check if the file has been copied over, or if the command was successful,
+            # only then remove the file
+            if [ "$?" = 0 ]; then
+                rm -f "$file"
+            else
+            # otherwise exit the script
+                echo "aws CLI s3 cp command unsuccessful. Stopping"
+                exit 1
+            fi
+            
             # $(rm -f "$file")
         done < <(echo "${files}" )
 
         # find directories older than X and empty after removing old files
         directories=$(while IFS= read -r -d '' directory; do
                     printf '%s\n' "${directory}"
-                done < <(find "${parent_folder}" -type d -empty -mmin +"${time_frame}" -print0))
+                done < <(find "${parent_folder}" -type d -empty -mtime +"${time_frame}" -print0))
         
         while read -r directory; do
             echo "${directory}"
-            # $(rm -d "${directory}")
+            rm -d "${directory}"
         done < <(echo "${directories}")
     fi
 }
@@ -76,4 +85,4 @@ find_and_delete_files_and_directories "${hania_test}" "${hania_time}"
 
 # add files:scan 
 # use verbose for developement TODO - remove verbose once done
-$(sudo -u www-data /usr/bin/php /var/www/owncloud/occ file:scan --path="/til1/files/__Hot Storage (Data expires after 60 Days)" -vv)
+sudo -u www-data /usr/bin/php /var/www/owncloud/occ file:scan --path="/til1/files/__Hot Storage (Data expires after 60 Days)" -vv
