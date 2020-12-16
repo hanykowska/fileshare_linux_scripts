@@ -15,10 +15,12 @@
 
 TIMESTAMP=`date '+%Y-%m-%d %H:%M:%S'`
 
+main_path="/mnt/owncloud/data"
+
 # parent folders
-medium_parent_folder="/mnt/owncloud/data/til1/files/__Medium Storage (Data expires after 1 year)/"
-hot_parent_folder="/mnt/owncloud/data/til1/files/__Hot Storage (Data expires after 60 Days)/"
-hania_test="/mnt/owncloud/data/til1/files/__Hot Storage (Data expires after 60 Days)/Hania-test/"
+medium_parent_folder="/til1/files/__Medium Storage (Data expires after 1 year)/"
+hot_parent_folder="/til1/files/__Hot Storage (Data expires after 60 Days)/"
+hania_test="/til1/files/__Hot Storage (Data expires after 60 Days)/Hania-test/"
 
 # time tresholds in days
 medium_time=365
@@ -36,8 +38,6 @@ find_and_delete_files_and_directories() {
     files=$(while IFS= read -r -d '' file; do
                 printf '%s\n' "${file}"
             done < <(find "${parent_folder}" -type f -name '*.*' -cmin +"${time_frame}" -print0))
-    echo "original files list:"
-    echo "${files}"
 
     files_count=$(wc -l < <(echo "${files}")) #returns the number of lines, estimate of number of files
     files_word_count=$(wc -w < <(echo "${files}")) #returns the number of words, to estimate if there's at least one file
@@ -49,24 +49,20 @@ find_and_delete_files_and_directories() {
 
     # if there are any files to be deleted, clean them up and remove now empty directories
     # use word count > 0 to check if any files were actually found 
-    # (if no files are found, there will be probably on new line character in the variable)
+    # (if no files are found, there will be probably on new line character in the variable, but not a word)
     if [ "${files_word_count}" -eq 0 ]; then
         echo "${TIMESTAMP}" 0 old files found, skipping...
     else
         echo "${TIMESTAMP}" "${files_count}" old files found, deleting...
         echo "${files}"
-	echo "............."
 	
         while read -r file; do
-            echo "${file}"
-            echo "............"
-	    /usr/local/bin/aws s3 cp "${file}" s3://fileshare-owncloud-hot/
+	        /usr/local/bin/aws s3 cp "${file}" s3://fileshare-owncloud-hot/
 	    
-
             # check if the file has been copied over, or if the command was successful,
             # only then remove the file
             if [ "$?" = 0 ]; then
-                echo "aws command successful, removing the file..."
+                echo "aws command successful. Removing the file..."
                 rm -f "$file"    
             else
             # otherwise exit the script
@@ -78,20 +74,23 @@ find_and_delete_files_and_directories() {
 
     fi
 
-        while read -r old_directory; do
-            echo "old directory: ${old_directory}"
-	    found_directory=$(find "${old_directory}" -maxdepth 0 -empty)
-	    echo "empty directory: $found_directory"
-            if [ "$old_directory" == "$found_directory" ]; then
-                echo "the directory is empty, removing it"
-		rm -d "${old_directory}"
-		echo "Directory removed"
-            else
-                echo "the directory is not empty, skipping."
-            fi
-            #rm -d "${directory}"
-        #echo "Directory removed....."
-        done < <(echo "${old_directories}")
+    # Check if the old directories are empty after removing the files
+    # If so, remove them
+    while read -r old_directory; do
+
+        echo "old directory: ${old_directory}"
+        found_directory=$(find "${old_directory}" -maxdepth 0 -empty)
+        echo "empty directory: $found_directory"
+
+        if [ "$old_directory" == "$found_directory" ]; then
+            echo "The directory " "${old_directory}" " is empty, removing..."
+            rm -d "${old_directory}"
+            echo "Directory removed"
+        else
+            echo "The directory " "${old_directory}" " is not empty, skipping..."
+        fi
+
+    done < <(echo "${old_directories}")
     
 }
 
@@ -102,11 +101,11 @@ find_and_delete_files_and_directories() {
 # find_and_delete_files_and_directories "$hot_parent_folder" "$hot_time"
 
 # test
-find_and_delete_files_and_directories "${hania_test}" "${hania_time}"
+find_and_delete_files_and_directories "${main_path}${hania_test}" "${hania_time}"
 
 # add files:scan 
 # use verbose for developement TODO - remove verbose once done
 echo "Running fileshare file:scan..."
-sudo -u www-data /usr/bin/php /var/www/owncloud/occ file:scan --path="/til1/files/__Hot Storage (Data expires after 60 Days)" -q
+sudo -u www-data /usr/bin/php /var/www/owncloud/occ file:scan --path="${hot_parent_folder}" -q
 
 echo "Done! file:scan finished with exit code " "$?"
