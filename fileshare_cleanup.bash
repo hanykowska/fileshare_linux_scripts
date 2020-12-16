@@ -79,12 +79,15 @@ find_and_delete_files_and_directories() {
         while read -r old_directory; do
             echo "${old_directory}"
             if [ "$old_directory" == $(find "${old_directory}" -empty) ]; then
-            echo "the directory is empty, remove it"
+                echo "the directory is empty, remove it"
+            else
+                echo "the directory is not empty, skipping."
+            fi
             #rm -d "${directory}"
         #echo "Directory removed....."
         done < <(echo "${old_directories}")
 
-        
+
 
         # find directories older than X and empty after removing old files
         directories=$(while IFS= read -r -d '' directory; do
