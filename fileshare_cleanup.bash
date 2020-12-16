@@ -57,21 +57,20 @@ find_and_delete_files_and_directories() {
         while read -r file; do
             echo "${file}"
             echo "............"
-	    #/usr/local/bin/aws s3 cp "${file}" s3://fileshare-owncloud-hot/
-	    #echo "aws command done ............"
-	    echo "${file}"
+	    /usr/local/bin/aws s3 cp "${file}" s3://fileshare-owncloud-hot/
+	    echo "aws command done ............"
+
             # check if the file has been copied over, or if the command was successful,
             # only then remove the file
             if [ "$?" = 0 ]; then
-                echo "aws command successful"
-                #rm -f "$file"    
+                echo "aws command successful, removing the file..."
+                rm -f "$file"    
             else
             # otherwise exit the script
-                echo "aws s3 cp command unsuccessful. Stopping"
+                echo "aws s3 cp command unsuccessful. Stopping..."
                 exit 1
             fi
             
-            # $(rm -f "$file")
         done < <(echo "${files}" )
 
         # find directories older than X and empty after removing old files
