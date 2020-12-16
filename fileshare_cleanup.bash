@@ -23,7 +23,7 @@ hania_test="/mnt/owncloud/data/til1/files/__Hot Storage (Data expires after 60 D
 # time tresholds in days
 medium_time=365
 hot_time=60
-hania_time=2
+hania_time=60
 
 
 ### FIND THE FILES AND DIRECTORIES TO BE DELETED
@@ -39,15 +39,16 @@ find_and_delete_files_and_directories() {
     echo "original files list:"
     echo "${files}"
 
-    echo "new files list:"
-    files=$(awk 'NR>1{print "PREV\n"} {PREV=$0} END{printf("%s",$0)}' ; echo " done" < <(echo "${files}"))
-    files_count=$(wc -l < <(echo "${files}")) #returns the number of lines, equal to the number of files
+    files_count=$(wc -l < <(echo "${files}")) #returns the number of lines, estimate of number of files
+    files_word_count=$(wc -w < <(echo "${files}")) #returns the number of words, to estimate if there's at least one file
 
     
 
     # if there are any files to be deleted, clean them up and remove now empty directories
-    if [ "${files_count}" -eq 0 ]; then
-        echo "${TIMESTAMP}" "${files_count}" old files found, skipping...
+    # use word count > 0 to check if any files were actually found 
+    # (if no files are found, there will be probably on new line character in the variable)
+    if [ "${files_word_count}" -eq 0 ]; then
+        echo "${TIMESTAMP}" 0 old files found, skipping...
     else
         echo "${TIMESTAMP}" "${files_count}" old files found, deleting...
         echo "${files}"
@@ -62,8 +63,8 @@ find_and_delete_files_and_directories() {
             # check if the file has been copied over, or if the command was successful,
             # only then remove the file
             if [ "$?" = 0 ]; then
-                #rm -f "$file"
-                
+                echo "aws command successful"
+                #rm -f "$file"    
             else
             # otherwise exit the script
                 echo "aws s3 cp command unsuccessful. Stopping"
@@ -77,12 +78,19 @@ find_and_delete_files_and_directories() {
         directories=$(while IFS= read -r -d '' directory; do
                     printf '%s\n' "${directory}"
                 done < <(find "${parent_folder}" -type d -empty -cmin +"${time_frame}" -print0))
-        
-        while read -r directory; do
-            echo "${directory}"
-            #rm -d "${directory}"
-	    #echo "Directory removed....."
-        done < <(echo "${directories}")
+
+        directories_word_count=$(wc -w < <(echo "${directories}"))
+        if [ "${directories_word_count}" -eq 0 ]; then
+            echo "${TIMESTAMP}" 0 old empty directories found, skipping...
+        else
+            echo "${TIMESTAMP}" some old empty directories found, deleting...
+
+            while read -r directory; do
+                echo "${directory}"
+                #rm -d "${directory}"
+            #echo "Directory removed....."
+            done < <(echo "${directories}")
+        fi
     fi
 }
 
