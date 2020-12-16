@@ -23,7 +23,7 @@ hania_test="/mnt/owncloud/data/til1/files/__Hot Storage (Data expires after 60 D
 # time tresholds in days
 medium_time=365
 hot_time=60
-hania_time=60
+hania_time=5
 
 
 ### FIND THE FILES AND DIRECTORIES TO BE DELETED
@@ -45,7 +45,7 @@ find_and_delete_files_and_directories() {
     # find directories older than X before removing old files
     old_directories=$(while IFS= read -r -d '' directory; do
                 printf '%s\n' "${directory}"
-            done < <(find "${parent_folder}" -type d -mmin +"${time_frame}" -print0))
+            done < <(find "${parent_folder}" -type d -cmin +"${time_frame}" -print0))
 
     # if there are any files to be deleted, clean them up and remove now empty directories
     # use word count > 0 to check if any files were actually found 
@@ -61,7 +61,7 @@ find_and_delete_files_and_directories() {
             echo "${file}"
             echo "............"
 	    /usr/local/bin/aws s3 cp "${file}" s3://fileshare-owncloud-hot/
-	    echo "aws command done ............"
+	    
 
             # check if the file has been copied over, or if the command was successful,
             # only then remove the file
@@ -76,39 +76,23 @@ find_and_delete_files_and_directories() {
             
         done < <(echo "${files}" )
 
+    fi
+
         while read -r old_directory; do
-            echo "${old_directory}"
-            if [ "$old_directory" == $(find "${old_directory}" -empty) ]; then
-                echo "the directory is empty, remove it"
+            echo "old directory: ${old_directory}"
+	    found_directory=$(find "${old_directory}" -maxdepth 0 -empty)
+	    echo "empty directory: $found_directory"
+            if [ "$old_directory" == "$found_directory" ]; then
+                echo "the directory is empty, removing it"
+		rm -d "${old_directory}"
+		echo "Directory removed"
             else
                 echo "the directory is not empty, skipping."
             fi
             #rm -d "${directory}"
         #echo "Directory removed....."
         done < <(echo "${old_directories}")
-
-
-
-        # find directories older than X and empty after removing old files
-        directories=$(while IFS= read -r -d '' directory; do
-                    printf '%s\n' "${directory}"
-                done < <(find "${parent_folder}" -type d -empty -cmin +"${time_frame}" -print0))
-        
-        
-
-        directories_word_count=$(wc -w < <(echo "${directories}"))
-        if [ "${directories_word_count}" -eq 0 ]; then
-            echo "${TIMESTAMP}" 0 old empty directories found, skipping...
-        else
-            echo "${TIMESTAMP}" some old empty directories found, deleting...
-
-            while read -r directory; do
-                echo "${directory}"
-                #rm -d "${directory}"
-            #echo "Directory removed....."
-            done < <(echo "${directories}")
-        fi
-    fi
+    
 }
 
 # medium to be deleted
