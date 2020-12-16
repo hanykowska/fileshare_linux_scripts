@@ -42,7 +42,10 @@ find_and_delete_files_and_directories() {
     files_count=$(wc -l < <(echo "${files}")) #returns the number of lines, estimate of number of files
     files_word_count=$(wc -w < <(echo "${files}")) #returns the number of words, to estimate if there's at least one file
 
-    
+    # find directories older than X before removing old files
+    old_directories=$(while IFS= read -r -d '' directory; do
+                printf '%s\n' "${directory}"
+            done < <(find "${parent_folder}" -type d -mmin +"${time_frame}" -print0))
 
     # if there are any files to be deleted, clean them up and remove now empty directories
     # use word count > 0 to check if any files were actually found 
@@ -73,10 +76,22 @@ find_and_delete_files_and_directories() {
             
         done < <(echo "${files}" )
 
+        while read -r old_directory; do
+            echo "${old_directory}"
+            if [ "$old_directory" == $(find "${old_directory}" -empty) ]; then
+            echo "the directory is empty, remove it"
+            #rm -d "${directory}"
+        #echo "Directory removed....."
+        done < <(echo "${old_directories}")
+
+        
+
         # find directories older than X and empty after removing old files
         directories=$(while IFS= read -r -d '' directory; do
                     printf '%s\n' "${directory}"
                 done < <(find "${parent_folder}" -type d -empty -cmin +"${time_frame}" -print0))
+        
+        
 
         directories_word_count=$(wc -w < <(echo "${directories}"))
         if [ "${directories_word_count}" -eq 0 ]; then
@@ -104,4 +119,7 @@ find_and_delete_files_and_directories "${hania_test}" "${hania_time}"
 
 # add files:scan 
 # use verbose for developement TODO - remove verbose once done
+echo "Running fileshare file:scan..."
 sudo -u www-data /usr/bin/php /var/www/owncloud/occ file:scan --path="/til1/files/__Hot Storage (Data expires after 60 Days)" -q
+
+echo "Done! file:scan finished with exit code " "$?"
