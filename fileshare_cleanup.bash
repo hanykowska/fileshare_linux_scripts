@@ -5,34 +5,35 @@
 # Originally created by Hanna Nykowska @ The Information Lab
 
 ### HOW TO USE THIS SCRIPT ###
-#
-#
-#
+# find_and_delete_files_and_directories function finds any files and directories
+# changed earlier than specified time ago. It first deletes the files and of the directories
+# that are empty after removal of old files.
+# The location to check, length of the period and the unit of the period can be passed as parameters
+# 
+# The script runs the above check for hot and medium storage, but could have more folders added.
+# Each with its own time length constraints.
 
 
 ### VARIABLES SECTION
 # set the variables to match your requirements
-
-TIMESTAMP=`date '+%Y-%m-%d %H:%M:%S'`
 
 main_path="/mnt/owncloud/data"
 
 # parent folders
 medium_parent_folder="/til1/files/__Medium Storage (Data expires after 1 year)/"
 hot_parent_folder="/til1/files/__Hot Storage (Data expires after 60 Days)/"
-hania_test="/til1/files/__Hot Storage (Data expires after 60 Days)/Hania-test/"
 
 # time tresholds in days
 medium_time=365
 hot_time=60
-hania_time=5
 
 
-### FIND THE FILES AND DIRECTORIES TO BE DELETED
+### FIND THE FILES AND DIRECTORIES TO BE DELETED - FUNCTION DEFINITION
 find_and_delete_files_and_directories() {
     parent_folder=$1
     time_length=$2
     time_frame=${3:-time}
+    TIMESTAMP=`date '+%Y-%m-%d %H:%M:%S'`
 
     echo "${TIMESTAMP}" 'Cleaning up ' "${parent_folder}"
 
@@ -106,18 +107,21 @@ find_and_delete_files_and_directories() {
     
 }
 
+
+### RUN THE CLEAN UP
 # medium to be deleted
-#find_and_delete_files_and_directories $medium_parent_folder $medium_time
+find_and_delete_files_and_directories "${main_path}${medium_parent_folder}" "${medium_time}" "time"
 
 # hot to be delete
-#find_and_delete_files_and_directories "${main_path}${hot_parent_folder}" "${hot_time}"
+find_and_delete_files_and_directories "${main_path}${hot_parent_folder}" "${hot_time}" "time"
 
-# test
-find_and_delete_files_and_directories "${main_path}${hania_test}" "${hania_time}" "min"
 
+### SCAN FILES ON FILESHARE TO UPDATE THE WEB BROWSER
 # add files:scan 
-# use verbose for developement TODO - remove verbose once done
-echo "Running fileshare file:scan..."
+echo "Running fileshare file:scan for hot storage..."
 sudo -u www-data /usr/bin/php /var/www/owncloud/occ file:scan --path="${hot_parent_folder}" -q
+echo "Done! file:scan finished with exit code " "$?"
 
+echo "Running fileshare file:scan for medium storage..."
+sudo -u www-data /usr/bin/php /var/www/owncloud/occ file:scan --path="${medium_parent_folder}" -q
 echo "Done! file:scan finished with exit code " "$?"
