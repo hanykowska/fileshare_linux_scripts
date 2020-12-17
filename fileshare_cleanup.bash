@@ -25,7 +25,7 @@ hania_test="/til1/files/__Hot Storage (Data expires after 60 Days)/Hania-test/"
 # time tresholds in days
 medium_time=365
 hot_time=60
-hania_time=60
+hania_time=5
 
 
 ### FIND THE FILES AND DIRECTORIES TO BE DELETED
@@ -36,10 +36,8 @@ find_and_delete_files_and_directories() {
 
     echo "${TIMESTAMP}" 'Cleaning up ' "${parent_folder}"
 
-    files=$(while IFS= read -r -d '' file; do
-                printf '%s\n' "${file}"
-            done < <(find "${parent_folder}" -type f -name '*.*' -c${time_frame} +"${time_length}" -print0))
-
+    # Find files older than time_length in time_frame units
+    files=$(find "${parent_folder}" -type f -name '*.*' -c${time_frame} +"${time_length}")
     files_count=$(wc -l < <(echo "${files}")) #returns the number of lines, estimate of number of files
     files_word_count=$(wc -w < <(echo "${files}")) #returns the number of words, to estimate if there's at least one file
 
@@ -74,6 +72,7 @@ find_and_delete_files_and_directories() {
     fi
 
 
+    # Check if there are any old directories
     if [ "${directories_word_count}" -eq 0 ]; then
         echo No old directories found, skipping...
     else
@@ -83,17 +82,26 @@ find_and_delete_files_and_directories() {
         # If so, remove them
         while read -r old_directory; do
 
-            found_directory=$(find "${old_directory}" -maxdepth 0 -empty)
-
-            if [ "$old_directory" == "$found_directory" ]; then
-                echo "The directory " "${old_directory}" " is empty, removing..."
-                rm -d "${old_directory}"
-                echo "Directory removed"
+            # If the directory to be checked is the same as parent folder, skip it
+            if [ "$old_directory" == "${parent_folder}" ]; then
+                echo "This is the parent folder, skipping..."
             else
-                echo "The directory " "${old_directory}" " is not empty, skipping..."
+
+                # Check if the directory is empty, then remove it
+                found_directory=$(find "${old_directory}" -maxdepth 0 -empty)
+                if [ "$old_directory" == "$found_directory" ]; then
+
+                    echo "The directory " "${old_directory}" " is empty, removing..."
+                    rm -d "${old_directory}"
+                    echo "Directory removed"
+
+                # If it's not empty, skip it
+                else
+                    echo "The directory " "${old_directory}" " is not empty, skipping..."
+                fi
             fi
 
-        done < <(tac <<< "${old_directories}")
+        done < <(tac <<< "${old_directories}") # feed the list of directories in reversed order
     fi
     
 }
