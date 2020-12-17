@@ -25,27 +25,26 @@ hania_test="/til1/files/__Hot Storage (Data expires after 60 Days)/Hania-test/"
 # time tresholds in days
 medium_time=365
 hot_time=60
-hania_time=5
+hania_time=60
 
 
 ### FIND THE FILES AND DIRECTORIES TO BE DELETED
 find_and_delete_files_and_directories() {
     parent_folder=$1
-    time_frame=$2
+    time_length=$2
+    time_frame=${3:-time}
 
     echo "${TIMESTAMP}" 'Cleaning up ' "${parent_folder}" '...'
 
     files=$(while IFS= read -r -d '' file; do
                 printf '%s\n' "${file}"
-            done < <(find "${parent_folder}" -type f -name '*.*' -cmin +"${time_frame}" -print0))
+            done < <(find "${parent_folder}" -type f -name '*.*' -c${time_frame} +"${time_length}" -print0))
 
     files_count=$(wc -l < <(echo "${files}")) #returns the number of lines, estimate of number of files
     files_word_count=$(wc -w < <(echo "${files}")) #returns the number of words, to estimate if there's at least one file
 
     # find directories older than X before removing old files
-    old_directories=$(while IFS= read -r -d '' directory; do
-                printf '%s\n' "${directory}"
-            done < <(find "${parent_folder}" -type d -cmin +"${time_frame}" -print0))
+    old_directories=$(find "${parent_folder}" -type d -c${time_frame} +"${time_length}")
 
     # if there are any files to be deleted, clean them up and remove now empty directories
     # use word count > 0 to check if any files were actually found 
@@ -74,6 +73,14 @@ find_and_delete_files_and_directories() {
 
     fi
 
+    echo "normal order:"
+
+    echo "${old_directories}"
+
+    echo "reversed order:"
+    tac <<< "${old_directories}"
+
+
     # Check if the old directories are empty after removing the files
     # If so, remove them
     while read -r old_directory; do
@@ -84,13 +91,13 @@ find_and_delete_files_and_directories() {
 
         if [ "$old_directory" == "$found_directory" ]; then
             echo "The directory " "${old_directory}" " is empty, removing..."
-            rm -d "${old_directory}"
+            # rm -d "${old_directory}"
             echo "Directory removed"
         else
             echo "The directory " "${old_directory}" " is not empty, skipping..."
         fi
 
-    done < <(echo "${old_directories}")
+    done < <(tac <<< "${old_directories}")
     
 }
 
@@ -98,10 +105,10 @@ find_and_delete_files_and_directories() {
 #find_and_delete_files_and_directories $medium_parent_folder $medium_time
 
 # hot to be delete
-# find_and_delete_files_and_directories "$hot_parent_folder" "$hot_time"
+#find_and_delete_files_and_directories "${main_path}${hot_parent_folder}" "${hot_time}"
 
 # test
-find_and_delete_files_and_directories "${main_path}${hania_test}" "${hania_time}"
+find_and_delete_files_and_directories "${main_path}${hania_test}" "${hania_time}" "min"
 
 # add files:scan 
 # use verbose for developement TODO - remove verbose once done
