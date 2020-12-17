@@ -34,7 +34,7 @@ find_and_delete_files_and_directories() {
     time_length=$2
     time_frame=${3:-time}
 
-    echo "${TIMESTAMP}" 'Cleaning up ' "${parent_folder}" '...'
+    echo "${TIMESTAMP}" 'Cleaning up ' "${parent_folder}"
 
     files=$(while IFS= read -r -d '' file; do
                 printf '%s\n' "${file}"
@@ -45,15 +45,15 @@ find_and_delete_files_and_directories() {
 
     # find directories older than X before removing old files
     old_directories=$(find "${parent_folder}" -type d -c${time_frame} +"${time_length}")
+    directories_word_count=$(wc -w < <(echo "${old_directories}")) #returns the number of words, to estimate if there's at least one file
 
     # if there are any files to be deleted, clean them up and remove now empty directories
     # use word count > 0 to check if any files were actually found 
     # (if no files are found, there will be probably on new line character in the variable, but not a word)
     if [ "${files_word_count}" -eq 0 ]; then
-        echo "${TIMESTAMP}" 0 old files found, skipping...
+        echo No old files found, skipping...
     else
-        echo "${TIMESTAMP}" "${files_count}" old files found, deleting...
-        echo "${files}"
+        echo "${files_count}" old files found, deleting...
 	
         while read -r file; do
 	        /usr/local/bin/aws s3 cp "${file}" s3://fileshare-owncloud-hot/
@@ -73,31 +73,28 @@ find_and_delete_files_and_directories() {
 
     fi
 
-    echo "normal order:"
 
-    echo "${old_directories}"
+    if [ "${directories_word_count}" -eq 0 ]; then
+        echo No old directories found, skipping...
+    else
+        echo "Old directories found, checking if they are empty..."
 
-    echo "reversed order:"
-    tac <<< "${old_directories}"
+        # Check if the old directories are empty after removing the files
+        # If so, remove them
+        while read -r old_directory; do
 
+            found_directory=$(find "${old_directory}" -maxdepth 0 -empty)
 
-    # Check if the old directories are empty after removing the files
-    # If so, remove them
-    while read -r old_directory; do
+            if [ "$old_directory" == "$found_directory" ]; then
+                echo "The directory " "${old_directory}" " is empty, removing..."
+                rm -d "${old_directory}"
+                echo "Directory removed"
+            else
+                echo "The directory " "${old_directory}" " is not empty, skipping..."
+            fi
 
-        echo "old directory: ${old_directory}"
-        found_directory=$(find "${old_directory}" -maxdepth 0 -empty)
-        echo "empty directory: $found_directory"
-
-        if [ "$old_directory" == "$found_directory" ]; then
-            echo "The directory " "${old_directory}" " is empty, removing..."
-            # rm -d "${old_directory}"
-            echo "Directory removed"
-        else
-            echo "The directory " "${old_directory}" " is not empty, skipping..."
-        fi
-
-    done < <(tac <<< "${old_directories}")
+        done < <(tac <<< "${old_directories}")
+    fi
     
 }
 
